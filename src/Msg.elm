@@ -13,3 +13,4 @@ type Msg
     | BadMessage String
     | SendStringChanged String
     | SendString
+    | SendMove

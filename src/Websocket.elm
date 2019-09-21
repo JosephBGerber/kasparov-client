@@ -1,10 +1,10 @@
-port module Websocket exposing (events, sendString)
+port module Websocket exposing (events, sendString, sendMove)
 
-import Board exposing (Board, decodeBoard)
 import GameState exposing (GameState, decodeGameState)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Move exposing (Move)
+import Board exposing (Board, decodeBoard)
 import Msg exposing (Msg(..))
 
 
@@ -20,6 +20,17 @@ message msgType msg =
         [ ( "msgType", Encode.string msgType )
         , ( "msg", msg )
         ]
+
+
+{-| Requests a string to be sent out on the socket connection.
+-}
+sendString : String -> Cmd msg
+sendString text =
+    message "SendString"
+        (Encode.object
+            [ ( "message", Encode.string text ) ]
+        )
+        |> toSocket
 
 
 {-| Requests a move be sent out on the socket connection

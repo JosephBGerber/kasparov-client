@@ -9,6 +9,8 @@ import Html.Events exposing (onClick, onInput)
 import Msg exposing (Msg(..))
 import Websocket
 
+import Move exposing (Position, Move)
+
 
 
 -- MAIN
@@ -79,8 +81,20 @@ update msg model =
             in
             ( model, Cmd.none )
 
+        SocketSetState state ->
+            let
+                log =
+                    Debug.log "State changed!"
+            in
+            ( model, Cmd.none )
+
+        SocketSetBoard board ->
+            ( { model | board = board }
+            , Cmd.none
+            )
+
         SendStringChanged string ->
-            ( { model | toSend = string }, Cmd.none )
+                    ( { model | toSend = string }, Cmd.none )
 
         SendString ->
             let
@@ -94,17 +108,13 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
-        SocketSetState state ->
-            let
-                log =
-                    Debug.log "State changed!"
-            in
-            ( model, Cmd.none )
+        SendMove ->
+            case model.socketInfo of
+                Connected ->
+                    ( model, Websocket.sendMove (Move (Position 2 1) (Position 3 2)) )
 
-        SocketSetBoard board ->
-            ( { model | board = board }
-            , Cmd.none
-            )
+                _ ->
+                    ( model, Cmd.none )
 
 
 
@@ -154,7 +164,7 @@ stringMsgControls : Model -> Html Msg
 stringMsgControls model =
     div []
         [ div [ class "controls" ]
-            [ button [ onClick SendString ] [ text "Send" ]
+            [ button [ onClick SendMove ] [ text "Send" ]
             , input [ onInput SendStringChanged, value model.toSend ] []
             ]
         ]

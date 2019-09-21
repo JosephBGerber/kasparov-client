@@ -93,7 +93,7 @@ toFEN move =
             rowToChar move.from.row
 
         fen =
-            [ toCol, toRow, '-', fromCol, fromRow ]
+            [ fromCol, fromRow, toCol, toRow ]
     in
     String.fromList fen
 

@@ -18,6 +18,9 @@ decodeGameState =
         |> Decode.andThen
             (\str ->
                 case str of
+                    "Setup" ->
+                        Decode.succeed Setup
+
                     "White" ->
                         Decode.succeed White
 
