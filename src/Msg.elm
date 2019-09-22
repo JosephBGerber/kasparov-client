@@ -1,7 +1,9 @@
 module Msg exposing (..)
 
 import Board exposing (Board)
+import Player exposing (Player)
 import GameState exposing (GameState)
+import Move exposing (Position)
 
 
 type Msg
@@ -10,7 +12,7 @@ type Msg
     | SocketError String
     | SocketSetState GameState
     | SocketSetBoard Board
+    | SocketSetPlayer Player
     | BadMessage String
-    | SendStringChanged String
-    | SendString
+    | Select Position
     | SendMove

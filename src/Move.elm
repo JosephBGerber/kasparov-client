@@ -1,4 +1,4 @@
-module Move exposing (..)
+module Move exposing (Move, Position, encodeMove, moveToFEN, positionToFEN)
 
 import Json.Encode as Encode exposing (Value)
 
@@ -77,8 +77,23 @@ rowToChar row =
             Debug.todo "Invalid move index"
 
 
-toFEN : Move -> String
-toFEN move =
+positionToFEN : Position -> String
+positionToFEN position =
+    let
+        col =
+            colToChar position.col
+
+        row =
+            rowToChar position.row
+
+        fen =
+            [ col, row ]
+    in
+    String.fromList fen
+
+
+moveToFEN : Move -> String
+moveToFEN move =
     let
         toCol =
             colToChar move.to.col
@@ -101,4 +116,4 @@ toFEN move =
 encodeMove : Move -> Value
 encodeMove move =
     Encode.object
-        [ ( "move", Encode.string (toFEN move) ) ]
+        [ ( "move", Encode.string (moveToFEN move) ) ]

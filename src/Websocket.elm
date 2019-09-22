@@ -1,10 +1,12 @@
-port module Websocket exposing (events, sendString, sendMove)
+port module Websocket exposing (events, sendMove)
 
-import GameState exposing (GameState, decodeGameState)
+
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Move exposing (Move)
 import Board exposing (Board, decodeBoard)
+import GameState exposing (GameState, decodeGameState)
+import Player exposing (Player, decodePlayer)
 import Msg exposing (Msg(..))
 
 
@@ -22,26 +24,16 @@ message msgType msg =
         ]
 
 
-{-| Requests a string to be sent out on the socket connection.
--}
-sendString : String -> Cmd msg
-sendString text =
-    message "SendString"
-        (Encode.object
-            [ ( "message", Encode.string text ) ]
-        )
-        |> toSocket
-
-
 {-| Requests a move be sent out on the socket connection
 -}
 sendMove : Move -> Cmd msg
 sendMove move =
     let
         fen =
-            Move.toFEN move
+            Move.moveToFEN move
     in
-    message "SendMove"
+    message
+        "SendMove"
         (Encode.object
             [ ( "move", Encode.string fen ) ]
         )
@@ -81,6 +73,10 @@ eventsDecoder =
                     "SetBoard" ->
                         Decode.map SocketSetBoard
                             (Decode.at [ "msg", "board" ] decodeBoard)
+
+                    "SetPlayer" ->
+                        Decode.map SocketSetPlayer
+                            (Decode.at [ "msg", "player" ] decodePlayer)
 
                     "Closed" ->
                         Decode.map SocketClosed

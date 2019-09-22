@@ -1,4 +1,4 @@
-module GameState exposing (..)
+module GameState exposing (GameState(..), decodeGameState, toString)
 
 import Json.Decode as Decode exposing (Decoder)
 
@@ -39,3 +39,25 @@ decodeGameState =
                     _ ->
                         Debug.todo "Illegal game state received"
             )
+
+
+toString : GameState -> String
+toString state =
+    case state of
+        Setup ->
+            "Setup"
+
+        White ->
+            "White"
+
+        Black ->
+            "Black"
+
+        WhiteWins ->
+            "WhiteWins"
+
+        BlackWins ->
+            "BlackWins"
+
+        Stalemate ->
+            "Stalemate"

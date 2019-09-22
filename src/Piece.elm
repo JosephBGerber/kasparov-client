@@ -1,4 +1,4 @@
-module Piece exposing (..)
+module Piece exposing (Piece(..), decodePiece, fromSAN, toSAN, toString)
 
 import Json.Decode as Decode exposing (Decoder)
 
@@ -107,6 +107,48 @@ toSAN piece =
         Empty ->
             " "
 
+
+toString: Piece -> String
+toString piece =
+    case piece of
+        BlackPawn ->
+            "♟"
+
+        BlackKnight ->
+            "♞"
+
+        BlackBishop ->
+            "♝"
+
+        BlackRook ->
+            "♜"
+
+        BlackQueen ->
+            "♛"
+
+        BlackKing ->
+            "♚"
+
+        WhitePawn ->
+            "♙"
+
+        WhiteKnight ->
+            "♘"
+
+        WhiteBishop ->
+            "♗"
+
+        WhiteRook ->
+            "♖"
+
+        WhiteQueen ->
+            "♕"
+
+        WhiteKing ->
+            "♔"
+
+        Empty ->
+            " "
 
 decodePiece : Decoder Piece
 decodePiece =
