@@ -2,6 +2,7 @@ module Player exposing (Player(..), decodePlayer)
 
 import Json.Decode as Decode exposing (Decoder)
 
+
 type Player
     = Kasparov
     | World

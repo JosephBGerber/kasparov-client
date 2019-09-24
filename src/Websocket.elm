@@ -1,13 +1,12 @@
-port module Websocket exposing (events, sendMove)
+port module Websocket exposing (events, sendConnectInstance, sendMove)
 
-
+import Board exposing (Board, decodeBoard)
+import GameState exposing (GameState, decodeGameState)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Move exposing (Move)
-import Board exposing (Board, decodeBoard)
-import GameState exposing (GameState, decodeGameState)
-import Player exposing (Player, decodePlayer)
 import Msg exposing (Msg(..))
+import Player exposing (Player, decodePlayer)
 
 
 
@@ -16,24 +15,39 @@ import Msg exposing (Msg(..))
 
 {-| Creates a standard message object structure for JS.
 -}
-message : String -> Value -> Value
-message msgType msg =
+message : String -> Int -> Value -> Value
+message msgType gameID msg =
     Encode.object
         [ ( "msgType", Encode.string msgType )
+        , ( "gameID", Encode.int gameID )
         , ( "msg", msg )
         ]
 
 
 {-| Requests a move be sent out on the socket connection
 -}
-sendMove : Move -> Cmd msg
-sendMove move =
+sendConnectInstance : Int -> Cmd msg
+sendConnectInstance gameID =
+    message
+        "ConnectInstance"
+        gameID
+        (Encode.object
+            []
+        )
+        |> toSocket
+
+
+{-| Requests a move be sent out on the socket connection
+-}
+sendMove : Int -> Move -> Cmd msg
+sendMove gameID move =
     let
         fen =
             Move.moveToFEN move
     in
     message
-        "SendMove"
+        "Move"
+        gameID
         (Encode.object
             [ ( "move", Encode.string fen ) ]
         )
@@ -65,6 +79,9 @@ eventsDecoder =
                 case msgType of
                     "Connected" ->
                         Decode.succeed SocketConnect
+
+                    "InstanceConnected" ->
+                        Decode.succeed SocketInstanceConnected
 
                     "SetState" ->
                         Decode.map SocketSetState

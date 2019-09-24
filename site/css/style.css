@@ -2,6 +2,20 @@ body {
     font-family: "sans-serif";
 }
 
+.board {
+    font-family: 'Lucida Console', Monaco, monospace;
+    margin: 0;
+    font-size: 3em;
+    border-spacing: 0;
+}
+
+.piece {
+    width: 1.5em;
+    height: 1.5em;
+    text-align: center;
+    border-collapse: collapse;
+}
+
 .connectionState {
     margin-bottom: 20px;
 }
@@ -10,9 +24,6 @@ body {
     margin-right: 10px;
 }
 
-.stringMessages {
-    display: flex;
-}
 
 .stringMessages .header {
     font-weight: bold;

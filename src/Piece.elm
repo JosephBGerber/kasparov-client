@@ -108,7 +108,7 @@ toSAN piece =
             " "
 
 
-toString: Piece -> String
+toString : Piece -> String
 toString piece =
     case piece of
         BlackPawn ->
@@ -149,6 +149,7 @@ toString piece =
 
         Empty ->
             " "
+
 
 decodePiece : Decoder Piece
 decodePiece =

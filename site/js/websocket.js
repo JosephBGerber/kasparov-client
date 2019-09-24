@@ -52,7 +52,6 @@ function openHandler(toElm, socket, url, event) {
 // When we get a message from the socket, we send it to Elm.
 function messageHandler(toElm, socket, url, event) {
     if (typeof event.data == "string") {
-        //console.log(event.data);
         let obj = JSON.parse(event.data);
         console.log(obj);
         toElm.send(obj);

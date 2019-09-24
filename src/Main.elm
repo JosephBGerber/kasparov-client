@@ -2,15 +2,15 @@ module Main exposing (main)
 
 import Array exposing (Array)
 import Board exposing (Board)
-import Player exposing (Player)
 import Browser
 import GameState exposing (GameState)
-import Html exposing (Html, button, div, span, text, table, tr, td)
-import Html.Attributes exposing (style)
-import Html.Events exposing (onClick)
+import Html exposing (Html, button, div, input, table, td, text, tr)
+import Html.Attributes exposing (class, placeholder, style, value)
+import Html.Events exposing (onClick, onInput)
 import Move exposing (Move, Position)
 import Msg exposing (Msg(..))
 import Piece exposing (Piece)
+import Player exposing (Player)
 import Websocket
 
 
@@ -31,18 +31,10 @@ main =
 -- MODEL
 
 
-type alias Model =
-    { socketInfo : SocketStatus
-    , state : GameState
-    , selection : Selection
-    , board : Board
-    , player : Player
-    }
-
-
 type SocketStatus
     = Unopened
     | Connected
+    | InstanceConnected
     | Closed Int
 
 
@@ -52,13 +44,26 @@ type Selection
     | Second Move
 
 
+type alias Model =
+    { status : SocketStatus
+    , gameIdField : String
+    , gameId : Maybe Int
+    , state : GameState
+    , player : Player
+    , selection : Selection
+    , board : Board
+    }
+
+
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { socketInfo = Unopened
+    ( { status = Unopened
+      , gameIdField = ""
+      , gameId = Nothing
       , state = GameState.Setup
+      , player = Player.None
       , selection = None
       , board = Board.init
-      , player = Player.None
       }
     , Cmd.none
     )
@@ -72,21 +77,24 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         SocketConnect ->
-            ( { model | socketInfo = Connected }, Cmd.none )
+            ( { model | status = Connected }, Cmd.none )
+
+        SocketInstanceConnected ->
+            ( { model | status = InstanceConnected }, Cmd.none )
 
         SocketClosed unsentBytes ->
-            ( { model | socketInfo = Closed unsentBytes }, Cmd.none )
+            ( { model | status = Closed unsentBytes }, Cmd.none )
 
         SocketError errMsg ->
             let
-                log =
+                _ =
                     Debug.log "Error:" errMsg
             in
             ( model, Cmd.none )
 
         BadMessage errMsg ->
             let
-                log =
+                _ =
                     Debug.log "Error:" errMsg
             in
             ( model, Cmd.none )
@@ -106,6 +114,25 @@ update msg model =
             , Cmd.none
             )
 
+        GameIdChanged gameIdField ->
+            let
+                gameId =
+                    String.toInt gameIdField
+            in
+            ( { model | gameIdField = gameIdField, gameId = gameId }
+            , Cmd.none
+            )
+
+        ConnectInstance ->
+            case model.gameId of
+                Nothing ->
+                    ( model, Cmd.none )
+
+                Just gameId ->
+                    ( model
+                    , Websocket.sendConnectInstance gameId
+                    )
+
         Select position ->
             case model.selection of
                 None ->
@@ -124,9 +151,9 @@ update msg model =
                     )
 
         SendMove ->
-            case ( model.socketInfo, model.selection ) of
-                ( Connected, Second move ) ->
-                    ( { model | selection = None }, Websocket.sendMove move )
+            case ( model.status, model.gameId, model.selection ) of
+                ( InstanceConnected, Just gameId, Second move ) ->
+                    ( { model | selection = None }, Websocket.sendMove gameId move )
 
                 _ ->
                     ( { model | selection = None }, Cmd.none )
@@ -137,7 +164,7 @@ update msg model =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions model =
+subscriptions _ =
     Websocket.events
 
 
@@ -147,12 +174,38 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
+    case model.status of
+        Unopened ->
+            text "Connecting..."
+
+        Connected ->
+            viewConnected model
+
+        InstanceConnected ->
+            viewInstanceStarted model
+
+        Closed _ ->
+            viewInstanceStarted model
+
+
+viewConnected : Model -> Html Msg
+viewConnected model =
     div []
-        [ viewBoard model.board
-        , viewSocketStatus model.socketInfo
-        , viewPlayer model.player
-        , viewState model.state
-        , viewSelection model.selection
+        [ input [ placeholder "Game PIN", value model.gameIdField, onInput GameIdChanged ] []
+        , button [ onClick ConnectInstance ] [ text "Connect!" ]
+        ]
+
+
+viewInstanceStarted : Model -> Html Msg
+viewInstanceStarted model =
+    div [ style "display" "flex", style "justify-content" "center" ]
+        [ div []
+            [ viewBoard model.board
+            , viewSocketStatus model.status
+            , viewPlayer model.player
+            , viewState model.state
+            , viewSelection model.selection
+            ]
         ]
 
 
@@ -160,19 +213,16 @@ viewSocketStatus : SocketStatus -> Html Msg
 viewSocketStatus status =
     div []
         [ case status of
-            Unopened ->
-                text "Connecting..."
-
-            Connected ->
-                div []
-                    [ text "Connected! "
-                    ]
-
             Closed unsent ->
                 div []
                     [ text " Closed with "
                     , text (String.fromInt unsent)
                     , text " bytes unsent."
+                    ]
+
+            _ ->
+                div []
+                    [ text "Connected! "
                     ]
         ]
 
@@ -207,14 +257,14 @@ viewSelection selection =
 viewPlayer : Player -> Html Msg
 viewPlayer player =
     case player of
-            Player.None ->
-                div [] [ text "Team: " ]
+        Player.None ->
+            div [] [ text "Team: " ]
 
-            Player.Kasparov ->
-                div [] [ text "Team: Kasparov" ]
+        Player.Kasparov ->
+            div [] [ text "Team: Kasparov" ]
 
-            Player.World ->
-                div [] [ text "Team: The World" ]
+        Player.World ->
+            div [] [ text "Team: The World" ]
 
 
 viewRow : ( Int, Array Piece ) -> Html Msg
@@ -223,12 +273,13 @@ viewRow ( rowIndex, row ) =
         viewPiece y ( x, piece ) =
             let
                 color =
-                    if (modBy 2 (y + x)  == 0) then
+                    if modBy 2 (y + x) == 0 then
                         "silver"
+
                     else
                         "white"
             in
-            td [ onClick (Select (Position x y)), style "width" "1.5em", style "height" "1.5em", style "background-color" color, style "text-align" "center", style "border-collapse" "collapse" ] [ text (Piece.toString piece) ]
+            td [ onClick (Select (Position x y)), class "piece", style "background-color" color ] [ text (Piece.toString piece) ]
     in
     Array.toIndexedList row
         |> List.map (viewPiece rowIndex)
@@ -240,4 +291,4 @@ viewBoard board =
     Array.toIndexedList board
         |> List.reverse
         |> List.map viewRow
-        |> table [ style "font-family" "'Lucida Console', Monaco, monospace", style "margin" "0", style "font-size" "3em", style "border-spacing" "0pt" ]
+        |> table [ class "board" ]
