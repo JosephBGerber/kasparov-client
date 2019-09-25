@@ -23,7 +23,7 @@ function bind(app) {
     });
 
     let toElm = app.ports.fromSocket;
-    let url = "ws://localhost:8887";
+    let url = "wss://kasparov-kasparov.cs.house:443";
     let socket = new WebSocket( url , []);
 
     socket.onopen = openHandler.bind(null, toElm, socket, url);
